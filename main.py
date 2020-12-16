@@ -23,9 +23,9 @@ player_score = 0
 ai_one_score = 0
 ai_two_score = 0
 time_left = 60
-ammo = 10
+ammo = 25
 playing_game = False
-reloading = False
+is_reloading = False
 is_shooting = False
 
 class Alien():
@@ -67,12 +67,13 @@ class Alien():
         self.dead_wait = 0
         
     def player_hit(self):
-        self.is_hit = True
-        self.x_change = 0
-        self.hit_by = 0
-        self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 0, 255))
-        global player_score
-        player_score += self.value
+        if self.is_hit == False:
+            self.is_hit = True
+            self.x_change = 0
+            self.hit_by = 0
+            self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 0, 255))
+            global player_score
+            player_score += self.value
 
     def ai_check(self):
         if self.is_hit == False:
@@ -120,13 +121,20 @@ alien_four = Alien(random.randint(0,5))
 alien_five = Alien(random.randint(0,5))
 aliens = [alien_one, alien_two, alien_three, alien_four, alien_five]
 
-play_button = Button((255,255,255), 200, 200, 150, 100, 'hi')
+play_button = Button((255,255,255), 200, 200, 150, 100, 60, 'hi')
+ammo_button = Button((255, 255, 255), 900, 30, 150, 50, 32, f"AMMO: {ammo}")
 player_click = HitMarker(0)
 ai_one_click = HitMarker(1)
 ai_two_click = HitMarker(2)
 hit_markers = [player_click, ai_one_click, ai_two_click]
-global iteration_count
 iteration_count = 0
+
+def show_ammo():
+    red = abs(25 - ammo) * 10
+    green = 255 - red
+    ammo_button.color = (red, green, 0)
+    ammo_button.text = f"AMMO: {ammo}"
+    ammo_button.draw(screen, True)
 
 def alien_spawner():
     alien_gen = random.randint(1,4) # 1 = 1-2 aliens possibly spawning, 2 = 1-3 aliens ..., 4 = 1-5 aliens possibly spawning
@@ -142,7 +150,7 @@ def alien_spawner():
 
 def is_shot(alien_x, alien_y, player_x, player_y):
     distance = math.sqrt(((alien_x - player_x) ** 2) + ((alien_y - player_y) ** 2))
-    if distance < 35:
+    if distance < 40:
         return True
     return False
 
@@ -150,18 +158,22 @@ running = True
 while running:
     pos = pygame.mouse.get_pos()
     screen.fill((0, 0, 0))
-    screen.blit(background, (0, 0))   
+    screen.blit(background, (0, 0))
+    show_ammo()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
             if is_shooting == False:
-                is_shooting = True
+                if ammo > 0 and is_reloading == False and not ammo_button.is_over(pos):
+                    is_shooting = True
+                    iteration_count = 0
+                    player_click.x_position = pos[0]
+                    player_click.y_position = pos[1]
+                    ammo += -1
+            if ammo_button.is_over(pos):
+                is_reloading = True
                 iteration_count = 0
-                player_click.x_position = pos[0]
-                player_click.y_position = pos[1]
-            if play_button.is_over(pos):
-                playing_game = True
     for alien in aliens:
         alien.x_position += alien.x_change
         alien.appear()
@@ -185,5 +197,11 @@ while running:
         is_shooting = False
     if is_shooting == True:
         player_click.appear()
+        iteration_count += 1
+    if ammo == 25:
+        is_reloading = False
+    if is_reloading:
+        if ammo < 25 and iteration_count % 10 == 0:
+            ammo += 1
         iteration_count += 1
     pygame.display.update()
