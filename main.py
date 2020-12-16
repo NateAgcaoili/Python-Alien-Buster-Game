@@ -1,8 +1,7 @@
 import pygame
 import random
-import pygame
-import random
 import time
+import math
 from button import Button
 
 
@@ -19,7 +18,7 @@ background = pygame.image.load('background.jpg')
 ### Global Variables ###
 alien_values = {0:-50, 1:10, 2:20, 3:30, 4:40, 5:50}
 alien_images = {0:'pig.png', 1:'a1.png', 2:'a2.png', 3:'a3.png', 4:'a4.png', 5:'a5.png'}
-hit_markers = {0:'crosshair.png', 1:'crosshair1.png', 2:'crosshair2.png'}
+hit_marker_skins = {0:'crosshair.png', 1:'crosshair1.png', 2:'crosshair2.png'}
 player_score = 0
 ai_one_score = 0
 ai_two_score = 0
@@ -32,19 +31,20 @@ is_shooting = False
 class Alien():
     points_font = pygame.font.Font('freesansbold.ttf', 32)
     def __init__(self, alien_id):
-        self.r_l = random.randint(0,1)
         self.value = alien_values[alien_id]
         self.skin = pygame.image.load(alien_images[alien_id])
+        self.y_position = random.randint(360, 650)
+        self.dead_wait = 0
+        self.is_hit = False
+        self.hit_by = 0
+        self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 0, 255))
+        self.r_l = random.randint(0,1)
         if self.r_l == 0:
             self.x_position = 1130
             self.x_change = random.uniform(-1,-0.5)
         else:
             self.x_position = -50
             self.x_change = random.uniform(0.5,1)
-        self.y_position = random.randint(360, 650)
-        self.dead_wait = 0
-        self.is_hit = False
-        self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 0, 255))
 
     def appear(self):
         screen.blit(self.skin, (self.x_position, self.y_position))
@@ -66,6 +66,14 @@ class Alien():
         self.is_hit = False
         self.dead_wait = 0
         
+    def player_hit(self):
+        self.is_hit = True
+        self.x_change = 0
+        self.hit_by = 0
+        self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 0, 255))
+        global player_score
+        player_score += self.value
+
     def ai_check(self):
         if self.is_hit == False:
             steal_point = random.randint(0, 1000)
@@ -73,11 +81,14 @@ class Alien():
                 ai_picker = random.randint(1,2)
                 if self.value == -50:
                     ai_picker = random.randint(1,6) # Less likely to shoot a pig
-                #points_font = pygame.font.Font('freesansbold.ttf', 32)
                 if ai_picker is 1:
                     self.is_hit = True
+                    #screen.blit(points_tag, (self.x_position + 12, self.y_position - 20))
                     self.x_change = 0
                     self.points_tag = Alien.points_font.render(f"{self.value}", True, (255, 0, 0))
+                    ai_one_click.x_position = self.x_position + 32
+                    ai_one_click.y_position = self.y_position + 32
+                    self.hit_by = 1
                     global ai_one_score
                     ai_one_score += self.value
                     #print(f"ai one: {ai_one_score} (+ {self.value})")
@@ -85,19 +96,21 @@ class Alien():
                     self.is_hit = True
                     self.x_change = 0
                     self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 255, 0))
+                    ai_two_click.x_position = self.x_position + 32
+                    ai_two_click.y_position = self.y_position + 32
+                    self.hit_by = 2
                     global ai_two_score
                     ai_two_score += self.value
                     #print(f"ai two: {ai_two_score} (+ {self.value})")
 
 class HitMarker():
     def __init__(self, id):
-        self.skin = pygame.image.load(hit_markers[id])
+        self.skin = pygame.image.load(hit_marker_skins[id])
         self.x_position = 0
         self.y_position = 0
 
     def appear(self):
         screen.blit(self.skin, (self.x_position - 32, self.y_position - 32))
-        #screen.blit(self.skin, (pos[0]-32, pos[1]-32))
 
 ### Game Objects ###
 alien_one = Alien(random.randint(0,5))
@@ -111,6 +124,7 @@ play_button = Button((255,255,255), 200, 200, 150, 100, 'hi')
 player_click = HitMarker(0)
 ai_one_click = HitMarker(1)
 ai_two_click = HitMarker(2)
+hit_markers = [player_click, ai_one_click, ai_two_click]
 global iteration_count
 iteration_count = 0
 
@@ -126,14 +140,11 @@ def alien_spawner():
         aliens[i].ai_check()
     time.sleep(1)
 
-
-def reset():
-    global time_left
-    global ammo
-    global reloading
-    ammo = 10
-    time_left = 60
-    reloading = False
+def is_shot(alien_x, alien_y, player_x, player_y):
+    distance = math.sqrt(((alien_x - player_x) ** 2) + ((alien_y - player_y) ** 2))
+    if distance < 35:
+        return True
+    return False
 
 running = True
 while running:
@@ -153,18 +164,23 @@ while running:
                 playing_game = True
     for alien in aliens:
         alien.x_position += alien.x_change
+        alien.appear()
         if alien.r_l == 0:
             if alien.x_position <= -60:
                 alien.randomize()
         elif alien.r_l == 1:
             if alien.x_position >= 1200:
                 alien.randomize()
+        if alien.dead_wait > 70:
+            hit_markers[alien.hit_by].appear()
         if alien.dead_wait > 200:
             alien.randomize()
         if alien.is_hit == True:
             alien.dead_wait += 1
+        if is_shot(alien.x_position, alien.y_position, player_click.x_position, player_click.y_position):
+            if is_shooting == True:
+                alien.player_hit()
         alien.ai_check()
-        alien.appear()
     if iteration_count > 70:
         is_shooting = False
     if is_shooting == True:
