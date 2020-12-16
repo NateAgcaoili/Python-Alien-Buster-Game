@@ -1,6 +1,6 @@
 import pygame
 import random
-import time
+#import time
 import math
 from button import Button
 
@@ -17,17 +17,19 @@ clock = pygame.time.Clock()
 background = pygame.image.load('background.jpg')
 
 ### Global Variables ###
-alien_values = {0:-50, 1:10, 2:20, 3:30, 4:40, 5:50}
-alien_images = {0:'pig.png', 1:'a1.png', 2:'a2.png', 3:'a3.png', 4:'a4.png', 5:'a5.png'}
-hit_marker_skins = {0:'crosshair.png', 1:'crosshair1.png', 2:'crosshair2.png'}
+alien_values = [-50, 10, 20, 30, 40, 50]
+alien_images = ['pig.png', 'a1.png', 'a2.png', 'a3.png', 'a4.png', 'a5.png']
+hit_marker_skins = ['crosshair.png', 'crosshair1.png', 'crosshair2.png']
 player_score = 0
 ai_one_score = 0
 ai_two_score = 0
 iteration_count = 0
 current_time = 0
+start_time = 0
 time_left = 6000
 ammo = 25
 playing_game = False
+doing_countdown = False
 is_reloading = False
 is_shooting = False
 
@@ -124,12 +126,14 @@ alien_four = Alien(random.randint(0,5))
 alien_five = Alien(random.randint(0,5))
 aliens = [alien_one, alien_two, alien_three, alien_four, alien_five]
 score_font = pygame.font.Font('freesansbold.ttf', 24)
+start_font = pygame.font.Font('freesansbold.ttf', 256)
 play_button = Button((255,255,255), 200, 200, 150, 100, 60, 'hi')
 ammo_button = Button((255, 255, 255), 900, 30, 160, 50, 32, f"AMMO: {ammo}")
 player_click = HitMarker(0)
 ai_one_click = HitMarker(1)
 ai_two_click = HitMarker(2)
 hit_markers = [player_click, ai_one_click, ai_two_click]
+start_text = ["3", "2", "1", "GO!"]
 
 
 def show_ammo():
@@ -153,7 +157,15 @@ def show_scores():
 def show_time_left():
     converted_time = time_left // 100
     time_left_display = score_font.render(f"Time Left: {converted_time}", True, (255, 255, 255))
-    screen.blit(time_left_display, (540, 10))
+    screen.blit(time_left_display, (500, 10))
+
+def show_countdown():
+    converted_time = start_time // 100
+    start_countdown = start_font.render(start_text[converted_time], True, (255, 255, 255))
+    if converted_time < 3:
+        screen.blit(start_countdown, (500, 250))
+    else:
+        screen.blit(start_countdown, (350, 250))
 
 def is_shot(alien_x, alien_y, player_x, player_y):
     distance = math.sqrt(((alien_x - player_x) ** 2) + ((alien_y - player_y) ** 2))
@@ -161,12 +173,39 @@ def is_shot(alien_x, alien_y, player_x, player_y):
         return True
     return False
 
+def reset_game():
+    global time_left
+    global start_time
+    global player_score
+    global ai_one_score
+    global ai_two_score
+    global ammo
+    time_left = 6000
+    start_time = 0
+    player_score = 0
+    ai_one_score = 0
+    ai_two_score = 0
+    ammo = 25
+    for alien in aliens:
+        alien.randomize()
+
 running = True
 while running:
     pos = pygame.mouse.get_pos()
     screen.fill((0, 0, 0))
     screen.blit(background, (0, 0))
-    if playing_game == True:
+    if doing_countdown == True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+        if start_time <= 390:
+            show_countdown()
+        else:
+            reset_game()
+            doing_countdown = False
+            playing_game = True
+        start_time += 1
+    elif playing_game == True:
         show_ammo()
         show_scores()
         show_time_left()
@@ -223,7 +262,8 @@ while running:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_button.is_over(pos):
-                    playing_game = True
+                    start_time = 0
+                    doing_countdown = True
         play_button.draw(screen)
     pygame.display.update()
     clock.tick(100)
