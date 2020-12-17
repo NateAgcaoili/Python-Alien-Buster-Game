@@ -16,13 +16,14 @@ clock = pygame.time.Clock()
 background = pygame.image.load('background.jpg')
 background2_inside = pygame.image.load('background2_inside.png')
 background2_outside = pygame.image.load('background2_outside.png')
+background_menu = pygame.image.load('background_menu.png')
 
 ### Global Variables ###
 alien_values = [-50, 10, 20, 30, 40, 50]
 alien_images = ['pig.png', 'a1.png', 'a2.png', 'a3.png', 'a4.png', 'a5.png']
 hit_marker_skins = ['crosshair.png', 'crosshair1.png', 'crosshair2.png']
 astronaut_skins = ['playerchar.png', 'ai1char.png', 'ai2char.png', 'player_eject.png', 'ai1_eject.png', 'ai2_eject.png']
-astronaut_coordinates = [[200, 500], [400, 500], [0, 125]]
+astronaut_coordinates = [[400, 500], [200, 500], [0, 200]]
 player_score = 0
 ai_one_score = 0
 ai_two_score = 0
@@ -129,20 +130,25 @@ class Astronaut():
     def __init__(self, id):
         self.skin = pygame.image.load(astronaut_skins[id])
         self.skin_eject = pygame.image.load(astronaut_skins[id + 3])
+        self.crown = pygame.image.load('winner_crown.png')
         self.x_position = 0
         self.y_position = 0
-        self.last_place = False
+        self.place = 0
     
     def appear(self):
-        if self.last_place == True:
+        if self.place == 2:
             screen.blit(self.skin_eject, (self.x_position, self.y_position))
         else:
             screen.blit(self.skin, (self.x_position, self.y_position))
+            if self.place == 0:
+                screen.blit(self.crown, (self.x_position - 10, self.y_position - 80))
 
 ### Game Objects ###
 score_font = pygame.font.Font('freesansbold.ttf', 24)
 start_font = pygame.font.Font('freesansbold.ttf', 256)
 play_button = Button((255,255,255), 200, 200, 150, 100, 60, 'hi')
+play_again_button = Button((255,255,255), 718, 507, 115, 30, 30, 'Play Again')
+main_menu_button = Button((255,255,255), 860, 507, 115, 30, 30, 'Main Menu')
 ammo_button = Button((255, 255, 255), 900, 30, 160, 50, 32, f"AMMO: {ammo}")
 player_click = HitMarker(0)
 ai_one_click = HitMarker(1)
@@ -157,7 +163,7 @@ aliens = []
 for i in range(5):
     alien = Alien(0)
     aliens.append(alien)
-
+    alien.randomize()
 
 def show_ammo():
     red = abs(25 - ammo) * 10
@@ -173,9 +179,14 @@ def show_scores():
     p_score = score_font.render(f"Player Points: {player_score}", True, (0, 0, 255))
     a1_score = score_font.render(f"AI 1 Points: {ai_one_score}", True, (255, 0, 0))
     a2_score = score_font.render(f"AI 2 Points: {ai_two_score}", True, (0, 255, 0))
-    screen.blit(p_score, (10, 10))
-    screen.blit(a1_score, (10, 40))
-    screen.blit(a2_score, (10, 70))
+    if playing_game == True:
+        screen.blit(p_score, (10, 10))
+        screen.blit(a1_score, (10, 40))
+        screen.blit(a2_score, (10, 70))
+    elif end_game == True:
+        screen.blit(p_score, (715, 400))
+        screen.blit(a1_score, (715, 435))
+        screen.blit(a2_score, (715, 470))
 
 def show_time_left():
     converted_time = time_left // 100
@@ -203,7 +214,7 @@ def reset_game():
     global ai_one_score
     global ai_two_score
     global ammo
-    time_left = 6000
+    time_left = 300
     start_time = 0
     player_score = 0
     ai_one_score = 0
@@ -247,11 +258,13 @@ def determine_placements():
 def set_astronaut_values():
     astronauts[first_place].x_position = astronaut_coordinates[0][0]
     astronauts[first_place].y_position = astronaut_coordinates[0][1]
+    astronauts[first_place].place = 0
     astronauts[second_place].x_position = astronaut_coordinates[1][0]
     astronauts[second_place].y_position = astronaut_coordinates[1][1]
+    astronauts[second_place].place = 1
     astronauts[third_place].x_position = astronaut_coordinates[2][0]
     astronauts[third_place].y_position = astronaut_coordinates[2][1]
-    astronauts[third_place].last_place = True
+    astronauts[third_place].place = 2
 
 running = True
 while running:
@@ -292,6 +305,8 @@ while running:
             determine_placements()
             set_astronaut_values()
             playing_game = False
+            for alien in aliens:
+                alien.randomize()
             end_game = True
         for alien in aliens:
             alien.x_position += alien.x_change
@@ -328,16 +343,42 @@ while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.MOUSEMOTION:
+                if play_again_button.is_over(pos):
+                    play_again_button.color = (0, 255, 0)
+                elif main_menu_button.is_over(pos):
+                    main_menu_button.color = (192, 192, 192)
+                else:
+                    play_again_button.color = (255, 255, 255)
+                    main_menu_button.color = (255, 255, 255)
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_again_button.is_over(pos):
+                    start_time = 0
+                    end_game = False
+                    doing_countdown = True
+                elif main_menu_button.is_over(pos):
+                    end_game = False
         screen.blit(background2_outside, (0, 0))
         astronauts[third_place].appear()
+        for alien in aliens:
+            alien.x_position += alien.x_change
+            alien.appear()
+            if alien.r_l == 0:
+                if alien.x_position <= -60:
+                    alien.randomize()
+            elif alien.r_l == 1:
+                if alien.x_position >= 1200:
+                    alien.randomize()
         screen.blit(background2_inside, (0, 0))
         astronauts[first_place].appear()
         astronauts[second_place].appear()
         show_scores()
-        astronauts[third_place].x_position += 1.4
+        if astronauts[third_place].x_position < 1020:
+            astronauts[third_place].x_position += 12
+        else:
+            play_again_button.draw(screen)
+            main_menu_button.draw(screen)
     else:
-        screen.blit(background2_inside, (0, 0))
-        screen.blit(background2_outside, (0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -345,6 +386,16 @@ while running:
                 if play_button.is_over(pos):
                     start_time = 0
                     doing_countdown = True
+        screen.blit(background_menu, (0, 0))
+        for alien in aliens:
+            alien.x_position += alien.x_change
+            alien.appear()
+            if alien.r_l == 0:
+                if alien.x_position <= -60:
+                    alien.randomize()
+            elif alien.r_l == 1:
+                if alien.x_position >= 1200:
+                    alien.randomize()
         play_button.draw(screen)
     pygame.display.update()
     clock.tick(100)
