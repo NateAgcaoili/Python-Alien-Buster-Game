@@ -3,30 +3,49 @@ import random
 import math
 from button import Button
 from pygame import mixer
+from os import path
 
+music_path = path.join(path.dirname(__file__), 'Assets', 'Audio', 'Music')
+soundfx_path = path.join(path.dirname(__file__), 'Assets', 'Audio', 'SoundEffects')
+aliens_path = path.join(path.dirname(__file__), 'Assets', 'Images', 'Aliens')
+astronauts_path = path.join(path.dirname(__file__), 'Assets', 'Images', 'Astronauts')
+backgrounds_path = path.join(path.dirname(__file__), 'Assets', 'Images', 'Backgrounds')
+gfx_path = path.join(path.dirname(__file__), 'Assets', 'Images', 'MiscGfx')
 
 ### Initializing Game ###
 pygame.init()
 
 screen = pygame.display.set_mode((1080, 720))
 pygame.display.set_caption("Alien Buster")
-icon = pygame.image.load('icon.png')
+icon = pygame.image.load(path.join(gfx_path, 'icon.png'))
 pygame.display.set_icon(icon)
 clock = pygame.time.Clock()
 
-background = pygame.image.load('background.jpg')
-background2_inside = pygame.image.load('background2_inside.png')
-background2_outside = pygame.image.load('background2_outside.png')
-background_menu = pygame.image.load('background_menu.png')
-background_menu_play = pygame.image.load('background_menu_play.png')
-mixer.music.load('main_menu.wav') 
+background = pygame.image.load(path.join(backgrounds_path, 'background.jpg'))
+background2_inside = pygame.image.load(path.join(backgrounds_path, 'background2_inside.png'))
+background2_outside = pygame.image.load(path.join(backgrounds_path, 'background2_outside.png'))
+background_menu = pygame.image.load(path.join(backgrounds_path, 'background_menu.png'))
+background_menu_play = pygame.image.load(path.join(backgrounds_path, 'background_menu_play.png'))
+mixer.music.load(path.join(music_path, 'main_menu.wav') )
 mixer.music.play(-1) #loops background music
 
 ### Global Variables ###
 alien_values = [-50, 10, 20, 30, 40, 50]
-alien_images = ['pig.png', 'a1.png', 'a2.png', 'a3.png', 'a4.png', 'a5.png']
-hit_marker_skins = ['crosshair.png', 'crosshair1.png', 'crosshair2.png']
-astronaut_skins = ['playerchar.png', 'ai1char.png', 'ai2char.png', 'player_eject.png', 'ai1_eject.png', 'ai2_eject.png']
+alien_images = [
+path.join(aliens_path, 'pig.png'), path.join(aliens_path,'alien_1.png'), 
+path.join(aliens_path,'alien_2.png'), path.join(aliens_path,'alien_3.png'), 
+path.join(aliens_path,'alien_4.png'), path.join(aliens_path,'alien_5.png')
+]
+hit_marker_skins = [
+path.join(gfx_path, 'crosshair.png'), 
+path.join(gfx_path, 'crosshair1.png'), 
+path.join(gfx_path, 'crosshair2.png')
+]
+astronaut_skins = [
+path.join(astronauts_path, 'player_char.png'), path.join(astronauts_path, 'ai_1_char.png'), 
+path.join(astronauts_path, 'ai_2_char.png'), path.join(astronauts_path, 'player_eject.png'), 
+path.join(astronauts_path, 'ai_1_eject.png'), path.join(astronauts_path, 'ai_2_eject.png')
+]
 astronaut_coordinates = [[400, 500], [200, 500], [0, 200]]
 player_score = 0
 ai_one_score = 0
@@ -84,8 +103,8 @@ class Alien():
         self.dead_wait = 0
         
     def player_hit(self):
-        hit_sound = mixer.Sound('hit_sound.wav')
-        pig_hit = mixer.Sound('pig_hit.wav')
+        hit_sound = mixer.Sound(path.join(soundfx_path, 'hit_sound.wav'))
+        pig_hit = mixer.Sound(path.join(soundfx_path, 'pig_hit.wav'))
         if self.is_hit == False:
             self.is_hit = True
             hit_sound.play()
@@ -145,7 +164,7 @@ class Astronaut():
     def __init__(self, id):
         self.skin = pygame.image.load(astronaut_skins[id])
         self.skin_eject = pygame.image.load(astronaut_skins[id + 3])
-        self.crown = pygame.image.load('winner_crown.png')
+        self.crown = pygame.image.load(path.join(astronauts_path, 'winner_crown.png'))
         self.x_position = 0
         self.y_position = 0
         self.place = 0
@@ -172,7 +191,7 @@ ai_two_click = HitMarker(2)
 hit_markers = [player_click, ai_one_click, ai_two_click]
 start_text = ["3", "2", "1", "GO!"]
 astronauts = []
-countdown = mixer.Sound('countdown.wav')
+countdown = mixer.Sound(path.join(soundfx_path, 'countdown.wav'))
 
 for i in range(3):
     astronaut = Astronaut(i)
@@ -299,7 +318,7 @@ while running:
             reset_game()
             doing_countdown = False
             countdown.stop()
-            mixer.music.load('playing_game.wav')
+            mixer.music.load(path.join(music_path, 'playing_game.wav'))
             mixer.music.play(-1)
             playing_game = True
         start_time += 1
@@ -318,7 +337,7 @@ while running:
                         iteration_count = 0
                         player_click.x_position = pos[0]
                         player_click.y_position = pos[1]
-                        shoot_sound = mixer.Sound('shoot.wav')
+                        shoot_sound = mixer.Sound(path.join(soundfx_path, 'shoot.wav'))
                         shoot_sound.play()
                         ammo += -1
                 if ammo_button.is_over(pos):
@@ -330,7 +349,7 @@ while running:
             playing_game = False
             for alien in aliens:
                 alien.randomize()
-            mixer.music.load('end_game.wav')
+            mixer.music.load(path.join(music_path, 'end_game.wav'))
             mixer.music.play(-1)
             end_game = True
         for alien in aliens:
@@ -384,7 +403,7 @@ while running:
                     countdown.play()
                     doing_countdown = True
                 elif main_menu_button.is_over(pos):
-                    mixer.music.load('main_menu.wav') 
+                    mixer.music.load(path.join(music_path, 'main_menu.wav'))
                     mixer.music.play(-1)
                     end_game = False
         screen.blit(background2_outside, (0, 0))
