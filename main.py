@@ -2,6 +2,7 @@ import pygame
 import random
 import math
 from button import Button
+from pygame import mixer
 
 
 ### Initializing Game ###
@@ -17,6 +18,9 @@ background = pygame.image.load('background.jpg')
 background2_inside = pygame.image.load('background2_inside.png')
 background2_outside = pygame.image.load('background2_outside.png')
 background_menu = pygame.image.load('background_menu.png')
+background_menu_play = pygame.image.load('background_menu_play.png')
+mixer.music.load('main_menu.wav') 
+mixer.music.play(-1) #loops background music
 
 ### Global Variables ###
 alien_values = [-50, 10, 20, 30, 40, 50]
@@ -80,11 +84,16 @@ class Alien():
         self.dead_wait = 0
         
     def player_hit(self):
+        hit_sound = mixer.Sound('hit_sound.wav')
+        pig_hit = mixer.Sound('pig_hit.wav')
         if self.is_hit == False:
             self.is_hit = True
+            hit_sound.play()
             self.x_change = 0
             self.hit_by = 0
             self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 0, 255))
+            if self.value == -50:
+                pig_hit.play()
             global player_score
             if player_score + self.value > 0:
                 player_score += self.value
@@ -93,11 +102,11 @@ class Alien():
 
     def ai_check(self):
         if self.is_hit == False:
-            steal_point = random.randint(0, 250)
+            steal_point = random.randint(0, 230)
             if steal_point == 69:
                 ai_picker = random.randint(1,2)
                 if self.value == -50:
-                    ai_picker = random.randint(1,6) # Less likely to shoot a pig
+                    ai_picker = random.randint(1,8) # Less likely to shoot a pig
                 if ai_picker == 1:
                     self.is_hit = True
                     self.x_change = 0
@@ -106,7 +115,10 @@ class Alien():
                     ai_one_click.y_position = self.y_position + 32
                     self.hit_by = 1
                     global ai_one_score
-                    ai_one_score += self.value
+                    if ai_one_score + self.value > 0:
+                        ai_one_score += self.value
+                    else:
+                        ai_one_score = 0
                 elif ai_picker == 2:
                     self.is_hit = True
                     self.x_change = 0
@@ -115,7 +127,10 @@ class Alien():
                     ai_two_click.y_position = self.y_position + 32
                     self.hit_by = 2
                     global ai_two_score
-                    ai_two_score += self.value
+                    if ai_two_score + self.value > 0:
+                        ai_two_score += self.value
+                    else:
+                        ai_two_score = 0
 
 class HitMarker():
     def __init__(self, id):
@@ -146,9 +161,10 @@ class Astronaut():
 ### Game Objects ###
 score_font = pygame.font.Font('freesansbold.ttf', 24)
 start_font = pygame.font.Font('freesansbold.ttf', 256)
-play_button = Button((255,255,255), 200, 200, 150, 100, 60, 'hi')
+play_button = Button((255,255,255), 253, 360, 230, 80, 60, 'Play')
+help_button = Button((255,255,255), 595, 360, 230, 80, 60, 'Help')
 play_again_button = Button((255,255,255), 718, 507, 115, 30, 30, 'Play Again')
-main_menu_button = Button((255,255,255), 860, 507, 115, 30, 30, 'Main Menu')
+main_menu_button = Button((255,255,255), 840, 507, 115, 30, 30, 'Main Menu')
 ammo_button = Button((255, 255, 255), 900, 30, 160, 50, 32, f"AMMO: {ammo}")
 player_click = HitMarker(0)
 ai_one_click = HitMarker(1)
@@ -156,6 +172,8 @@ ai_two_click = HitMarker(2)
 hit_markers = [player_click, ai_one_click, ai_two_click]
 start_text = ["3", "2", "1", "GO!"]
 astronauts = []
+countdown = mixer.Sound('countdown.wav')
+
 for i in range(3):
     astronaut = Astronaut(i)
     astronauts.append(astronaut)
@@ -214,7 +232,7 @@ def reset_game():
     global ai_one_score
     global ai_two_score
     global ammo
-    time_left = 300
+    time_left = 6000
     start_time = 0
     player_score = 0
     ai_one_score = 0
@@ -280,6 +298,9 @@ while running:
         else:
             reset_game()
             doing_countdown = False
+            countdown.stop()
+            mixer.music.load('playing_game.wav')
+            mixer.music.play(-1)
             playing_game = True
         start_time += 1
     elif playing_game == True:
@@ -297,6 +318,8 @@ while running:
                         iteration_count = 0
                         player_click.x_position = pos[0]
                         player_click.y_position = pos[1]
+                        shoot_sound = mixer.Sound('shoot.wav')
+                        shoot_sound.play()
                         ammo += -1
                 if ammo_button.is_over(pos):
                     is_reloading = True
@@ -307,6 +330,8 @@ while running:
             playing_game = False
             for alien in aliens:
                 alien.randomize()
+            mixer.music.load('end_game.wav')
+            mixer.music.play(-1)
             end_game = True
         for alien in aliens:
             alien.x_position += alien.x_change
@@ -355,8 +380,12 @@ while running:
                 if play_again_button.is_over(pos):
                     start_time = 0
                     end_game = False
+                    mixer.music.stop()
+                    countdown.play()
                     doing_countdown = True
                 elif main_menu_button.is_over(pos):
+                    mixer.music.load('main_menu.wav') 
+                    mixer.music.play(-1)
                     end_game = False
         screen.blit(background2_outside, (0, 0))
         astronauts[third_place].appear()
@@ -384,18 +413,12 @@ while running:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_button.is_over(pos):
-                    start_time = 0
+                    mixer.music.stop()
+                    countdown.play()
                     doing_countdown = True
-        screen.blit(background_menu, (0, 0))
-        for alien in aliens:
-            alien.x_position += alien.x_change
-            alien.appear()
-            if alien.r_l == 0:
-                if alien.x_position <= -60:
-                    alien.randomize()
-            elif alien.r_l == 1:
-                if alien.x_position >= 1200:
-                    alien.randomize()
-        play_button.draw(screen)
+        if play_button.is_over(pos):
+            screen.blit(background_menu_play, (0, 0))
+        else:
+            screen.blit(background_menu, (0, 0))
     pygame.display.update()
     clock.tick(100)
