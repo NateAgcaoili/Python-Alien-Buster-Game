@@ -2,7 +2,6 @@ import pygame
 import random
 import math
 from button import Button
-from pygame import mixer
 from os import path
 
 music_path = path.join(path.dirname(__file__), 'Assets', 'Audio', 'Music')
@@ -11,6 +10,7 @@ aliens_path = path.join(path.dirname(__file__), 'Assets', 'Images', 'Aliens')
 astronauts_path = path.join(path.dirname(__file__), 'Assets', 'Images', 'Astronauts')
 backgrounds_path = path.join(path.dirname(__file__), 'Assets', 'Images', 'Backgrounds')
 gfx_path = path.join(path.dirname(__file__), 'Assets', 'Images', 'MiscGfx')
+print(gfx_path)
 
 ### Initializing Game ###
 pygame.init()
@@ -26,36 +26,15 @@ background2_inside = pygame.image.load(path.join(backgrounds_path, 'background2_
 background2_outside = pygame.image.load(path.join(backgrounds_path, 'background2_outside.png'))
 background_menu = pygame.image.load(path.join(backgrounds_path, 'background_menu.png'))
 background_menu_play = pygame.image.load(path.join(backgrounds_path, 'background_menu_play.png'))
-mixer.music.load(path.join(music_path, 'main_menu.wav') )
-mixer.music.play(-1) #loops background music
+pygame.mixer.music.load(path.join(music_path, 'main_menu.wav') )
+pygame.mixer.music.play(-1) #loops background music
 
 ### Global Variables ###
-alien_values = [-50, 10, 20, 30, 40, 50]
-alien_images = [
-path.join(aliens_path, 'pig.png'), path.join(aliens_path,'alien_1.png'), 
-path.join(aliens_path,'alien_2.png'), path.join(aliens_path,'alien_3.png'), 
-path.join(aliens_path,'alien_4.png'), path.join(aliens_path,'alien_5.png')
-]
-hit_marker_skins = [
-path.join(gfx_path, 'crosshair.png'), 
-path.join(gfx_path, 'crosshair1.png'), 
-path.join(gfx_path, 'crosshair2.png')
-]
-astronaut_skins = [
-path.join(astronauts_path, 'player_char.png'), path.join(astronauts_path, 'ai_1_char.png'), 
-path.join(astronauts_path, 'ai_2_char.png'), path.join(astronauts_path, 'player_eject.png'), 
-path.join(astronauts_path, 'ai_1_eject.png'), path.join(astronauts_path, 'ai_2_eject.png')
-]
-astronaut_coordinates = [[400, 500], [200, 500], [0, 200]]
 player_score = 0
 ai_one_score = 0
 ai_two_score = 0
 iteration_count = 0
-current_time = 0
 start_time = 0
-first_place = 0
-second_place = 1
-third_place = 2
 time_left = 6000
 ammo = 25
 playing_game = False
@@ -65,54 +44,65 @@ is_reloading = False
 is_shooting = False
 
 class Alien():
+    point_values = [-50, 10, 20, 30, 40, 50]
+    skins = [
+    path.join(aliens_path, 'pig.png'), path.join(aliens_path,'alien_1.png'), 
+    path.join(aliens_path,'alien_2.png'), path.join(aliens_path,'alien_3.png'), 
+    path.join(aliens_path,'alien_4.png'), path.join(aliens_path,'alien_5.png')
+    ]
+    hit_marker_skins = [
+    path.join(gfx_path, 'crosshair.png'), 
+    path.join(gfx_path, 'crosshair1.png'), 
+    path.join(gfx_path, 'crosshair2.png')
+    ]
     points_font = pygame.font.Font('freesansbold.ttf', 32)
+    hit_sound = pygame.mixer.Sound(path.join(soundfx_path, 'hit_sound.wav'))
+    pig_hit = pygame.mixer.Sound(path.join(soundfx_path, 'pig_hit.wav'))
+
     def __init__(self, alien_id):
-        self.value = alien_values[alien_id]
-        self.skin = pygame.image.load(alien_images[alien_id])
-        self.y_position = random.randint(360, 650)
+        self.value = Alien.point_values[alien_id]
+        self.skin = pygame.image.load(Alien.skins[alien_id])
+        self.hit_marker_skin = pygame.image.load(Alien.hit_marker_skins[0])
+        self.y_position = 0
         self.dead_wait = 0
         self.is_hit = False
         self.hit_by = 0
         self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 0, 255))
-        self.r_l = random.randint(0,1)
-        if self.r_l == 0:
-            self.x_position = 1130
-            self.x_change = random.uniform(-5,-2)
-        else:
-            self.x_position = -50
-            self.x_change = random.uniform(2,5)
+        self.r_l = 0
+        self.x_position = 0
+        self.x_change = 0
 
     def appear(self):
         screen.blit(self.skin, (self.x_position, self.y_position))
         if self.is_hit == True:
             screen.blit(self.points_tag, (self.x_position + 12, self.y_position - 20))
+            screen.blit(self.hit_marker_skin, (self.x_position, self.y_position))
     
     def randomize(self):
         alien_id = random.randint(0,5)
-        self.r_l = random.randint(0,1)
-        self.value = alien_values[alien_id]
-        self.skin = pygame.image.load(alien_images[alien_id])
-        if self.r_l == 0:
-            self.x_position = 1130
-            self.x_change = random.uniform(-5,-2)
-        else:
-            self.x_position = -50
-            self.x_change = random.uniform(2,5)
+        self.value = Alien.point_values[alien_id]
+        self.skin = pygame.image.load(Alien.skins[alien_id])
         self.y_position = random.randint(360, 650)
         self.is_hit = False
         self.dead_wait = 0
+        self.r_l = random.randint(0,1)
+        if self.r_l == 0:
+            self.x_position = 1130
+            self.x_change = random.uniform(-4.5,-1.5)
+        else:
+            self.x_position = -50
+            self.x_change = random.uniform(1.5,4.5)
         
     def player_hit(self):
-        hit_sound = mixer.Sound(path.join(soundfx_path, 'hit_sound.wav'))
-        pig_hit = mixer.Sound(path.join(soundfx_path, 'pig_hit.wav'))
         if self.is_hit == False:
             self.is_hit = True
-            hit_sound.play()
+            Alien.hit_sound.play()
             self.x_change = 0
             self.hit_by = 0
+            self.hit_marker_skin = pygame.image.load(path.join(gfx_path, 'hitmarker.png'))
             self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 0, 255))
             if self.value == -50:
-                pig_hit.play()
+                Alien.pig_hit.play()
             global player_score
             if player_score + self.value > 0:
                 player_score += self.value
@@ -121,7 +111,7 @@ class Alien():
 
     def ai_check(self):
         if self.is_hit == False:
-            steal_point = random.randint(0, 230)
+            steal_point = random.randint(0, 150) #230
             if steal_point == 69:
                 ai_picker = random.randint(1,2)
                 if self.value == -50:
@@ -129,10 +119,9 @@ class Alien():
                 if ai_picker == 1:
                     self.is_hit = True
                     self.x_change = 0
-                    self.points_tag = Alien.points_font.render(f"{self.value}", True, (255, 0, 0))
-                    ai_one_click.x_position = self.x_position + 32
-                    ai_one_click.y_position = self.y_position + 32
                     self.hit_by = 1
+                    self.hit_marker_skin = pygame.image.load(Alien.hit_marker_skins[self.hit_by])
+                    self.points_tag = Alien.points_font.render(f"{self.value}", True, (255, 0, 0))
                     global ai_one_score
                     if ai_one_score + self.value > 0:
                         ai_one_score += self.value
@@ -141,10 +130,9 @@ class Alien():
                 elif ai_picker == 2:
                     self.is_hit = True
                     self.x_change = 0
-                    self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 255, 0))
-                    ai_two_click.x_position = self.x_position + 32
-                    ai_two_click.y_position = self.y_position + 32
                     self.hit_by = 2
+                    self.hit_marker_skin = pygame.image.load(Alien.hit_marker_skins[self.hit_by])
+                    self.points_tag = Alien.points_font.render(f"{self.value}", True, (0, 255, 0))
                     global ai_two_score
                     if ai_two_score + self.value > 0:
                         ai_two_score += self.value
@@ -152,18 +140,32 @@ class Alien():
                         ai_two_score = 0
 
 class HitMarker():
+    skins = [
+    path.join(gfx_path, 'crosshair.png'), 
+    path.join(gfx_path, 'crosshair1.png'), 
+    path.join(gfx_path, 'crosshair2.png')
+    ]
+
     def __init__(self, id):
-        self.skin = pygame.image.load(hit_marker_skins[id])
+        self.skin = pygame.image.load(HitMarker.skins[id])
         self.x_position = 0
         self.y_position = 0
+        self.can_hit = True
 
     def appear(self):
         screen.blit(self.skin, (self.x_position - 32, self.y_position - 32))
 
 class Astronaut():
+    skins = [
+    path.join(astronauts_path, 'player_char.png'), path.join(astronauts_path, 'ai_1_char.png'), 
+    path.join(astronauts_path, 'ai_2_char.png'), path.join(astronauts_path, 'player_eject.png'), 
+    path.join(astronauts_path, 'ai_1_eject.png'), path.join(astronauts_path, 'ai_2_eject.png')
+    ]
+    coordinates = [[400, 500], [200, 500], [0, 200]]
+
     def __init__(self, id):
-        self.skin = pygame.image.load(astronaut_skins[id])
-        self.skin_eject = pygame.image.load(astronaut_skins[id + 3])
+        self.skin = pygame.image.load(Astronaut.skins[id])
+        self.skin_eject = pygame.image.load(Astronaut.skins[id + 3])
         self.crown = pygame.image.load(path.join(astronauts_path, 'winner_crown.png'))
         self.x_position = 0
         self.y_position = 0
@@ -190,12 +192,13 @@ ai_one_click = HitMarker(1)
 ai_two_click = HitMarker(2)
 hit_markers = [player_click, ai_one_click, ai_two_click]
 start_text = ["3", "2", "1", "GO!"]
+countdown = pygame.mixer.Sound(path.join(soundfx_path, 'countdown.wav'))
+reload_sound = pygame.mixer.Sound(path.join(soundfx_path, 'reload.wav'))
 astronauts = []
-countdown = mixer.Sound(path.join(soundfx_path, 'countdown.wav'))
-
 for i in range(3):
     astronaut = Astronaut(i)
     astronauts.append(astronaut)
+sorted_astronauts = astronauts[:]
 aliens = []
 for i in range(5):
     alien = Alien(0)
@@ -239,8 +242,8 @@ def show_countdown():
         screen.blit(start_countdown, (350, 250))
 
 def is_shot(alien_x, alien_y, player_x, player_y):
-    distance = math.sqrt(((alien_x - player_x) ** 2) + ((alien_y - player_y) ** 2))
-    if distance < 40:
+    distance = math.sqrt(((alien_x - (player_x - 32)) ** 2) + ((alien_y - player_y) ** 2))
+    if distance < 45:
         return True
     return False
 
@@ -251,6 +254,7 @@ def reset_game():
     global ai_one_score
     global ai_two_score
     global ammo
+    pygame.mouse.set_visible(False)
     time_left = 6000
     start_time = 0
     player_score = 0
@@ -261,47 +265,40 @@ def reset_game():
         alien.randomize()
 
 def determine_placements():
-    global first_place
-    global second_place
-    global third_place
     if player_score > ai_one_score:
         if player_score > ai_two_score: # 0 > 1
-            first_place = 0
-            second_place = 1
-            third_place = 2
+            astronauts[0].place = 0
+            astronauts[1].place = 1
+            astronauts[2].place = 2
         else: # 2 > 0 > 1
-            first_place = 2
-            second_place = 0
-            third_place = 1
+            astronauts[0].place = 1
+            astronauts[1].place = 2
+            astronauts[2].place = 0
     elif player_score > ai_two_score: # 1 > 0
         if ai_one_score > ai_two_score: # 1 > 0 > 2
-            first_place = 1
-            second_place = 0
-            third_place = 2
-        else: 
-            first_place = 2
-            second_place = 1
-            third_place = 0
+            astronauts[0].place = 1
+            astronauts[1].place = 0
+            astronauts[2].place = 2
+        else:
+            astronauts[0].place = 2
+            astronauts[1].place = 1
+            astronauts[2].place = 0
     else:
         if ai_one_score > ai_two_score:
-            first_place = 1
-            second_place = 2
-            third_place = 0
+            astronauts[0].place = 2
+            astronauts[1].place = 0
+            astronauts[2].place = 1
         else:
-            first_place = 2
-            second_place = 1
-            third_place = 0
+            astronauts[0].place = 2
+            astronauts[1].place = 1
+            astronauts[2].place = 0
 
-def set_astronaut_values():
-    astronauts[first_place].x_position = astronaut_coordinates[0][0]
-    astronauts[first_place].y_position = astronaut_coordinates[0][1]
-    astronauts[first_place].place = 0
-    astronauts[second_place].x_position = astronaut_coordinates[1][0]
-    astronauts[second_place].y_position = astronaut_coordinates[1][1]
-    astronauts[second_place].place = 1
-    astronauts[third_place].x_position = astronaut_coordinates[2][0]
-    astronauts[third_place].y_position = astronaut_coordinates[2][1]
-    astronauts[third_place].place = 2
+def prep_astronauts():
+    for astronaut in astronauts:
+        astronaut.x_position = Astronaut.coordinates[astronaut.place][0]
+        astronaut.y_position = Astronaut.coordinates[astronaut.place][1]
+        sorted_astronauts[astronaut.place] = astronaut
+
 
 running = True
 while running:
@@ -318,8 +315,8 @@ while running:
             reset_game()
             doing_countdown = False
             countdown.stop()
-            mixer.music.load(path.join(music_path, 'playing_game.wav'))
-            mixer.music.play(-1)
+            pygame.mixer.music.load(path.join(music_path, 'playing_game.wav'))
+            pygame.mixer.music.play(-1)
             playing_game = True
         start_time += 1
     elif playing_game == True:
@@ -327,6 +324,8 @@ while running:
         show_ammo()
         show_scores()
         show_time_left()
+        player_click.x_position = pos[0]
+        player_click.y_position = pos[1]
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -335,22 +334,24 @@ while running:
                     if ammo > 0 and is_reloading == False and not ammo_button.is_over(pos):
                         is_shooting = True
                         iteration_count = 0
-                        player_click.x_position = pos[0]
-                        player_click.y_position = pos[1]
-                        shoot_sound = mixer.Sound(path.join(soundfx_path, 'shoot.wav'))
+                        """player_click.x_position = pos[0]
+                        player_click.y_position = pos[1]"""
+                        shoot_sound = pygame.mixer.Sound(path.join(soundfx_path, 'shoot.wav'))
                         shoot_sound.play()
                         ammo += -1
                 if ammo_button.is_over(pos):
+                    reload_sound.play()
                     is_reloading = True
                     iteration_count = 0
         if time_left <= 0:
             determine_placements()
-            set_astronaut_values()
-            playing_game = False
+            prep_astronauts()
+            pygame.mouse.set_visible(True)
+            playing_game = FalseS
             for alien in aliens:
                 alien.randomize()
-            mixer.music.load(path.join(music_path, 'end_game.wav'))
-            mixer.music.play(-1)
+            pygame.mixer.music.load(path.join(music_path, 'end_game.wav'))
+            pygame.mixer.music.play(-1)
             end_game = True
         for alien in aliens:
             alien.x_position += alien.x_change
@@ -362,26 +363,33 @@ while running:
                 if alien.x_position >= 1200:
                     alien.randomize()
             if alien.dead_wait > 25:
-                hit_markers[alien.hit_by].appear()
+                player_click.can_hit = True
+                pass
+                #hit_markers[alien.hit_by].appear()
             if alien.dead_wait > 50:
                 alien.randomize()
             if alien.is_hit == True:
                 alien.dead_wait += 1
             if is_shot(alien.x_position, alien.y_position, player_click.x_position, player_click.y_position):
-                if is_shooting == True:
+                if is_shooting == True and player_click.can_hit == True:
+                    player_click.can_hit = False
                     alien.player_hit()
             alien.ai_check()
-        if iteration_count > 25:
+        if iteration_count > 15:
             is_shooting = False
         if is_shooting == True:
-            player_click.appear()
             iteration_count += 1
+        """elif is_shooting == False:
+            player_click.x_position = 2000
+            player_click.y_position = 2000"""
         if ammo == 25:
+            reload_sound.stop()
             is_reloading = False
         if is_reloading:
             if ammo < 25 and iteration_count % 5 == 0:
                 ammo += 1
             iteration_count += 1
+        player_click.appear()
         time_left -= 1
     elif end_game == True:
         for event in pygame.event.get():
@@ -399,15 +407,15 @@ while running:
                 if play_again_button.is_over(pos):
                     start_time = 0
                     end_game = False
-                    mixer.music.stop()
+                    pygame.mixer.music.stop()
                     countdown.play()
                     doing_countdown = True
                 elif main_menu_button.is_over(pos):
-                    mixer.music.load(path.join(music_path, 'main_menu.wav'))
-                    mixer.music.play(-1)
+                    pygame.mixer.music.load(path.join(music_path, 'main_menu.wav'))
+                    pygame.mixer.music.play(-1)
                     end_game = False
         screen.blit(background2_outside, (0, 0))
-        astronauts[third_place].appear()
+        sorted_astronauts[2].appear()
         for alien in aliens:
             alien.x_position += alien.x_change
             alien.appear()
@@ -418,11 +426,11 @@ while running:
                 if alien.x_position >= 1200:
                     alien.randomize()
         screen.blit(background2_inside, (0, 0))
-        astronauts[first_place].appear()
-        astronauts[second_place].appear()
+        sorted_astronauts[0].appear()
+        sorted_astronauts[1].appear()
         show_scores()
-        if astronauts[third_place].x_position < 1020:
-            astronauts[third_place].x_position += 12
+        if sorted_astronauts[2].x_position < 1020:
+            sorted_astronauts[2].x_position += 12
         else:
             play_again_button.draw(screen)
             main_menu_button.draw(screen)
@@ -432,7 +440,7 @@ while running:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_button.is_over(pos):
-                    mixer.music.stop()
+                    pygame.mixer.music.stop()
                     countdown.play()
                     doing_countdown = True
         if play_button.is_over(pos):
