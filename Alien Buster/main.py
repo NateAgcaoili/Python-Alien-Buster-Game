@@ -347,7 +347,7 @@ while running:
             determine_placements()
             prep_astronauts()
             pygame.mouse.set_visible(True)
-            playing_game = FalseS
+            playing_game = False
             for alien in aliens:
                 alien.randomize()
             pygame.mixer.music.load(path.join(music_path, 'end_game.wav'))
@@ -364,8 +364,6 @@ while running:
                     alien.randomize()
             if alien.dead_wait > 25:
                 player_click.can_hit = True
-                pass
-                #hit_markers[alien.hit_by].appear()
             if alien.dead_wait > 50:
                 alien.randomize()
             if alien.is_hit == True:
@@ -379,9 +377,6 @@ while running:
             is_shooting = False
         if is_shooting == True:
             iteration_count += 1
-        """elif is_shooting == False:
-            player_click.x_position = 2000
-            player_click.y_position = 2000"""
         if ammo == 25:
             reload_sound.stop()
             is_reloading = False
