@@ -255,7 +255,7 @@ def reset_game():
     global ai_two_score
     global ammo
     pygame.mouse.set_visible(False)
-    time_left = 6000
+    time_left = 100
     start_time = 0
     player_score = 0
     ai_one_score = 0
@@ -390,14 +390,14 @@ while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEMOTION:
+            """if event.type == pygame.MOUSEMOTION:
                 if play_again_button.is_over(pos):
                     play_again_button.color = (0, 255, 0)
                 elif main_menu_button.is_over(pos):
                     main_menu_button.color = (192, 192, 192)
                 else:
                     play_again_button.color = (255, 255, 255)
-                    main_menu_button.color = (255, 255, 255)
+                    main_menu_button.color = (255, 255, 255)"""
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_again_button.is_over(pos):
                     start_time = 0
@@ -411,6 +411,13 @@ while running:
                     end_game = False
         screen.blit(background2_outside, (0, 0))
         sorted_astronauts[2].appear()
+        if play_again_button.is_over(pos):
+            play_again_button.color = (0, 255, 0)
+        elif main_menu_button.is_over(pos):
+            main_menu_button.color = (192, 192, 192)
+        else:
+            play_again_button.color = (255, 255, 255)
+            main_menu_button.color = (255, 255, 255)
         for alien in aliens:
             alien.x_position += alien.x_change
             alien.appear()
