@@ -390,14 +390,6 @@ while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            """if event.type == pygame.MOUSEMOTION:
-                if play_again_button.is_over(pos):
-                    play_again_button.color = (0, 255, 0)
-                elif main_menu_button.is_over(pos):
-                    main_menu_button.color = (192, 192, 192)
-                else:
-                    play_again_button.color = (255, 255, 255)
-                    main_menu_button.color = (255, 255, 255)"""
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_again_button.is_over(pos):
                     start_time = 0
@@ -413,10 +405,11 @@ while running:
         sorted_astronauts[2].appear()
         if play_again_button.is_over(pos):
             play_again_button.color = (0, 255, 0)
-        elif main_menu_button.is_over(pos):
-            main_menu_button.color = (192, 192, 192)
         else:
             play_again_button.color = (255, 255, 255)
+        if main_menu_button.is_over(pos):
+            main_menu_button.color = (192, 192, 192)
+        else:
             main_menu_button.color = (255, 255, 255)
         for alien in aliens:
             alien.x_position += alien.x_change
