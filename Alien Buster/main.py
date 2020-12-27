@@ -255,7 +255,7 @@ def reset_game():
     global ai_two_score
     global ammo
     pygame.mouse.set_visible(False)
-    time_left = 100
+    time_left = 6000
     start_time = 0
     player_score = 0
     ai_one_score = 0
