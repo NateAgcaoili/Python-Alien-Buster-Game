@@ -334,8 +334,6 @@ while running:
                     if ammo > 0 and is_reloading == False and not ammo_button.is_over(pos):
                         is_shooting = True
                         iteration_count = 0
-                        """player_click.x_position = pos[0]
-                        player_click.y_position = pos[1]"""
                         shoot_sound = pygame.mixer.Sound(path.join(soundfx_path, 'shoot.wav'))
                         shoot_sound.play()
                         ammo += -1
